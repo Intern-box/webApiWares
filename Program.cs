@@ -3,11 +3,9 @@
     public class OrderWareInfoExt
     {
         public int IdWare; // Id товара в каталоге товаров
-
         public string Name = string.Empty; //Наименование товара
         public int Count { get; set; } //Количество в заказе
         public decimal Price { get; set; } //Цена за 1 единицу товара
-
         public int Total; // Count * Price
     }
 
@@ -55,8 +53,9 @@
 
             app.MapGet("/Wares", () =>
             {
-                var dc = app.Services.GetService<DataContext>();
-                return Results.Ok(dc.Wares); //для упрощения используй  Results API https://metanit.com/sharp/aspnet6/10.1.php
+                try { return Results.Ok(app.Services.GetService<DataContext>().Wares); } //для упрощения используй Results API https://metanit.com/sharp/aspnet6/10.1.php
+
+                catch (Exception) { return Results.Ok(string.Empty); }
             });
 
             app.MapPost("/Wares/add", (string ware) =>
@@ -72,7 +71,7 @@
 
                 //return Results.Ok();
 
-                wares.RemoveAt(id--);
+                if (wares.Count < id) wares.RemoveAt(id--);
             });
 
             app.MapGet("/Orders", () =>
@@ -93,7 +92,6 @@
                 Order order = new()
                 {
                     Id = orders.Count + 1,
-
                     Date = DateTime.Now
                 };
 
@@ -119,14 +117,17 @@
 
                 OrderWareInfo orderWareInfo = new();
 
-                foreach (WareInfo wareInfo in _waresinfo)
+                try
                 {
-                    orderWareInfo.Name = wareInfo.Name;
-                    orderWareInfo.Count = wareInfo.Count;
-                    orderWareInfo.Price = wareInfo.Price;
-
-                    orders[idOrder].Wares.Add(orderWareInfo);
+                    foreach (WareInfo wareInfo in _waresinfo)
+                    {
+                        orderWareInfo.Name = wareInfo.Name;
+                        orderWareInfo.Count = wareInfo.Count;
+                        orderWareInfo.Price = wareInfo.Price;
+                        orders[idOrder].Wares.Add(orderWareInfo);
+                    }
                 }
+                catch (Exception) { }
             });
             
             app.MapGet("/Orders/getWares/{idOrder}", (int idOrder) =>
@@ -136,14 +137,18 @@
 
                 List<OrderWareInfoExt> orderWareInfoExt = new();
 
-                for (int i = 0; i < orders[idOrder].Wares.Count; i++)
+                try
                 {
-                    orderWareInfoExt[i].IdWare = wares.IndexOf(orders[idOrder].Wares[i].Name);
-                    orderWareInfoExt[i].Name = orders[idOrder].Wares[i].Name;
-                    orderWareInfoExt[i].Count = orders[idOrder].Wares[i].Count;
-                    orderWareInfoExt[i].Price = orders[idOrder].Wares[i].Price;
-                    orderWareInfoExt[i].Total = orders[idOrder].Wares[i].Count * (int)orders[idOrder].Wares[i].Price;
+                    for (int i = 0; i < orders[idOrder].Wares.Count; i++)
+                    {
+                        orderWareInfoExt[i].IdWare = wares.IndexOf(orders[idOrder].Wares[i].Name);
+                        orderWareInfoExt[i].Name = orders[idOrder].Wares[i].Name;
+                        orderWareInfoExt[i].Count = orders[idOrder].Wares[i].Count;
+                        orderWareInfoExt[i].Price = orders[idOrder].Wares[i].Price;
+                        orderWareInfoExt[i].Total = orders[idOrder].Wares[i].Count * (int)orders[idOrder].Wares[i].Price;
+                    }
                 }
+                catch (Exception) { }
 
                 return orderWareInfoExt;
             });
@@ -177,14 +182,18 @@
 
                 int dayId = Array.IndexOf(days, firstDay);
 
-                for (int i = 0; i < 31; i++)
+                if (dayId != -1)
                 {
-                    Console.WriteLine($"{i + 1} января, {days[dayId]}");
+                    for (int i = 0; i < 31; i++)
+                    {
+                        Console.WriteLine($"{i + 1} января, {days[dayId]}");
 
-                    dayId++;
+                        dayId++;
 
-                    if (dayId > 6) dayId = 0;
+                        if (dayId > 6) dayId = 0;
+                    }
                 }
+                else { Console.WriteLine($"Неправильный день"); }
             });
 
             app.Run();
