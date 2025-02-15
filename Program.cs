@@ -53,6 +53,7 @@
 
             app.MapGet("/Wares", () =>
             {
+                // Возвращаем список товаров
                 try { return Results.Ok(app.Services.GetService<DataContext>().Wares); } //для упрощения используй Results API https://metanit.com/sharp/aspnet6/10.1.php
 
                 catch (Exception) { return Results.Ok(string.Empty); }
@@ -62,25 +63,20 @@
             {
                 //метод должен добавлять новый товар в общий список товаров
                 //return Results.Ok();
-
-                wares.Add(ware);
+                if (ware != null || ware != string.Empty) wares.Add(ware); // Если НЕ null или не "Пустая строка", то добавляем в список товаров
             });
             app.MapDelete("/Wares/delete/{id}", (int id) =>
             {
                 //метод должен удалять товар по id
-
                 //return Results.Ok();
-
-                if (wares.Count < id) wares.RemoveAt(id--);
+                if (wares.Count > id) wares.RemoveAt(id - 1); // Если Идентификатор меньше кол-ва товаров в списке товаров, то удаляем товар с индексом минус один (отсчёт от нуля)
             });
 
             app.MapGet("/Orders", () =>
             {
                 //метод должен вернуть список заказов в виде:
                 //id, date, employee, countWares, где countWares - количество привязанных к заказу товаров
-
                 //return Results.Ok();
-
                 return orders;
             });
 
@@ -88,14 +84,13 @@
             {
                 //метод позволяет добавить новый заказ - только шапку, товары добавляем другим api
                 //id - должен расчитаться автоматически (как будто вычисляемое поле в БД): максимальный существующий + 1
-
-                Order order = new()
+                Order order = new() // Формируем "пустой" заказ
                 {
                     Id = orders.Count + 1,
                     Date = DateTime.Now
                 };
 
-                orders.Add(order);
+                orders.Add(order); // и добавляем в список заказов
             });
 
             app.MapPost("/Orders/addWare/{idOrder}", (int idOrder, int idWare, int count, decimal price) =>
@@ -103,10 +98,13 @@
                 //метод добавляет информацию по товару в заказ
                 //но его написали "на коленке", нет проверок, возможны исключения
                 //необходимо "причесать" код (на CS8602 Разыменование вероятно пустой ссылки - можно не обращать внимания)
-
-                var order = orders.FirstOrDefault(order => order.Id == idOrder);
-                order.Wares.Add(new OrderWareInfo { Name = wares.FirstOrDefault(x => wares.IndexOf(x) == idWare), Count = count, Price = price });
-                return Results.Ok(order);
+                try
+                {
+                    var order = orders.FirstOrDefault(order => order.Id == idOrder);
+                    order.Wares.Add(new OrderWareInfo { Name = wares.FirstOrDefault(x => wares.IndexOf(x) == idWare), Count = count, Price = price });
+                    return Results.Ok(order);
+                }
+                catch (Exception) { return Results.Problem(); }
             });
 
             app.MapPost("/Orders/addRangeWares/{idOrder}", (int idOrder, WareInfo[] _waresinfo) =>
@@ -114,17 +112,16 @@
                 //метод добавляет информацию по товару в заказ, но сразу массивом
                 //есть record класс wareInfo - необходимо указать его структуру, которую будет присылать нам frontend
                 //для того, чтобы мы могли добавить сразу несколько товаров в заказ
-
-                OrderWareInfo orderWareInfo = new();
+                OrderWareInfo orderWareInfo = new(); // Создаём пустую сроку с товаром в заказе
 
                 try
                 {
-                    foreach (WareInfo wareInfo in _waresinfo)
+                    foreach (WareInfo wareInfo in _waresinfo) // Перебираем список товаров для добавления в заказ
                     {
-                        orderWareInfo.Name = wareInfo.Name;
+                        orderWareInfo.Name = wareInfo.Name; // Заполняем нужные поля
                         orderWareInfo.Count = wareInfo.Count;
                         orderWareInfo.Price = wareInfo.Price;
-                        orders[idOrder].Wares.Add(orderWareInfo);
+                        orders[idOrder].Wares.Add(orderWareInfo); // Добавляем единицу товара к списку товаров
                     }
                 }
                 catch (Exception) { }
@@ -134,12 +131,11 @@
             {
                 //метод должен вернуть список товаров заказа в виде:
                 //idWare, name (наименование товара), count, price, total, где total - count*price
-
-                List<OrderWareInfoExt> orderWareInfoExt = new();
+                List<OrderWareInfoExt> orderWareInfoExt = new(); // Создаём список
 
                 try
                 {
-                    for (int i = 0; i < orders[idOrder].Wares.Count; i++)
+                    for (int i = 0; i < orders[idOrder].Wares.Count; i++) // Перечисляем содержимое в списке товаров по заказу и записываем в созданный список
                     {
                         orderWareInfoExt[i].IdWare = wares.IndexOf(orders[idOrder].Wares[i].Name);
                         orderWareInfoExt[i].Name = orders[idOrder].Wares[i].Name;
@@ -178,13 +174,14 @@
                 7 января, понедельник
                 и т.д.*/
 
+                // Дни недели
                 string[] days = new string[] { "понедельник", "вторник", "среда", "четверг", "пятница", "суббота", "воскресенье" };
 
-                int dayId = Array.IndexOf(days, firstDay);
+                int dayId = Array.IndexOf(days, firstDay); // День отсчёта
 
                 if (dayId != -1)
                 {
-                    for (int i = 0; i < 31; i++)
+                    for (int i = 0; i < 31; i++) // Перебираем и выводим информацию по дням
                     {
                         Console.WriteLine($"{i + 1} января, {days[dayId]}");
 
