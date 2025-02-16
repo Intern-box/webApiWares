@@ -1,14 +1,5 @@
 ﻿namespace webApiWares
 {
-    public class OrderWareInfoExt
-    {
-        public int IdWare; // Id товара в каталоге товаров
-        public string Name = string.Empty; //Наименование товара
-        public int Count { get; set; } //Количество в заказе
-        public decimal Price { get; set; } //Цена за 1 единицу товара
-        public int Total; // Count * Price
-    }
-
     record class WareInfo(string Name, int Count, decimal Price);
 
     public class Program
@@ -54,6 +45,7 @@
             app.MapGet("/Wares", () =>
             {
                 // Возвращаем список товаров
+
                 try { return Results.Ok(app.Services.GetService<DataContext>().Wares); } //для упрощения используй Results API https://metanit.com/sharp/aspnet6/10.1.php
 
                 catch (Exception) { return Results.Ok(string.Empty); }
@@ -63,12 +55,14 @@
             {
                 //метод должен добавлять новый товар в общий список товаров
                 //return Results.Ok();
+
                 if (ware != null || ware != string.Empty) wares.Add(ware); // Если НЕ null или не "Пустая строка", то добавляем в список товаров
             });
             app.MapDelete("/Wares/delete/{id}", (int id) =>
             {
                 //метод должен удалять товар по id
                 //return Results.Ok();
+
                 if (wares.Count > id) wares.RemoveAt(id - 1); // Если Идентификатор меньше кол-ва товаров в списке товаров, то удаляем товар с индексом минус один (отсчёт от нуля)
             });
 
@@ -77,6 +71,7 @@
                 //метод должен вернуть список заказов в виде:
                 //id, date, employee, countWares, где countWares - количество привязанных к заказу товаров
                 //return Results.Ok();
+
                 return orders;
             });
 
@@ -84,6 +79,7 @@
             {
                 //метод позволяет добавить новый заказ - только шапку, товары добавляем другим api
                 //id - должен расчитаться автоматически (как будто вычисляемое поле в БД): максимальный существующий + 1
+
                 Order order = new() // Формируем "пустой" заказ
                 {
                     Id = orders.Count + 1,
@@ -98,6 +94,7 @@
                 //метод добавляет информацию по товару в заказ
                 //но его написали "на коленке", нет проверок, возможны исключения
                 //необходимо "причесать" код (на CS8602 Разыменование вероятно пустой ссылки - можно не обращать внимания)
+
                 try
                 {
                     var order = orders.FirstOrDefault(order => order.Id == idOrder);
@@ -112,6 +109,7 @@
                 //метод добавляет информацию по товару в заказ, но сразу массивом
                 //есть record класс wareInfo - необходимо указать его структуру, которую будет присылать нам frontend
                 //для того, чтобы мы могли добавить сразу несколько товаров в заказ
+
                 OrderWareInfo orderWareInfo = new(); // Создаём пустую сроку с товаром в заказе
 
                 try
@@ -131,22 +129,8 @@
             {
                 //метод должен вернуть список товаров заказа в виде:
                 //idWare, name (наименование товара), count, price, total, где total - count*price
-                List<OrderWareInfoExt> orderWareInfoExt = new(); // Создаём список
 
-                try
-                {
-                    for (int i = 0; i < orders[idOrder].Wares.Count; i++) // Перечисляем содержимое в списке товаров по заказу и записываем в созданный список
-                    {
-                        orderWareInfoExt[i].IdWare = wares.IndexOf(orders[idOrder].Wares[i].Name);
-                        orderWareInfoExt[i].Name = orders[idOrder].Wares[i].Name;
-                        orderWareInfoExt[i].Count = orders[idOrder].Wares[i].Count;
-                        orderWareInfoExt[i].Price = orders[idOrder].Wares[i].Price;
-                        orderWareInfoExt[i].Total = orders[idOrder].Wares[i].Count * (int)orders[idOrder].Wares[i].Price;
-                    }
-                }
-                catch (Exception) { }
-
-                return orderWareInfoExt;
+                return orders[idOrder].Wares;
             });
 
             //отдельная задачка, чтобы еще один проект не создавать консольный
