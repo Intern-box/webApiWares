@@ -38,7 +38,7 @@
         public DateTime Date { get; set; } //Дата создания
         public List<OrderWareInfo>? Wares { get; set; } //Список товаров в заказе
         public int countWares; // Кол-во товаров в заказе
-        public Order() { countWares = Wares.Count; }
+        public Order() { if (Wares is not null) countWares = Wares.Count; }
     }
     
     // Заказы
